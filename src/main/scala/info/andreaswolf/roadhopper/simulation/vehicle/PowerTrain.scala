@@ -147,7 +147,7 @@ class Wheels(val vehicleParameters: VehicleParameters, bus: ActorRef) extends Pr
 		log.info(s"forces: (eff/engine/drag/rolling/brake/climbing): $effectiveForce/$engineForce/$dragForce/$rollingFrictionForce/$brakeForce/$climbingResistance")
 
 		// TODO add a factor for rotational inertia
-		val acceleration = effectiveForce / vehicleParameters.mass
+		val acceleration = signals.signalValue("alpha_in", 0.0)
 
 		bus ? UpdateSignalValue("a", acceleration)
 	}
