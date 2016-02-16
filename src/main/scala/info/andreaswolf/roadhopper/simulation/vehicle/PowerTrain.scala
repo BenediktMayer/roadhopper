@@ -134,7 +134,21 @@ class Wheels(val vehicleParameters: VehicleParameters, bus: ActorRef) extends Pr
 			* vehicleParameters.dragCoefficient * vehicleParameters.dragReferenceArea * currentVelocity * currentVelocity)
 
 		// M* is the engine torque in [Nm]. Dividing it by the wheel radius (in [m]!) results in the force in Newton.
-		val engineForce: Double = signals.signalValue("M*", 0.0) / (vehicleParameters.wheelRadius / 100.0)
+
+		val n: Double = vehicleParameters.transmissionRatio * currentVelocity / vehicleParameters.wheelRadius
+
+		//val M_max: Double
+		if (vehicleParameters.maximumEngineTorque < vehicleParameters.maximumEnginePower/n)
+			{
+			val M_max = vehicleParameters.maximumEngineTorque
+			}
+		else
+			{
+			val M_max = vehicleParameters.maximumEnginePower/n
+			}
+
+		val M_max = 0.0
+		val engineForce: Double = M_max / (vehicleParameters.wheelRadius / 100.0)
 
 		val brakeForce = currentVelocity match {
 			case x if x > 0.0 =>
@@ -147,7 +161,22 @@ class Wheels(val vehicleParameters: VehicleParameters, bus: ActorRef) extends Pr
 		log.info(s"forces: (eff/engine/drag/rolling/brake/climbing): $effectiveForce/$engineForce/$dragForce/$rollingFrictionForce/$brakeForce/$climbingResistance")
 
 		// TODO add a factor for rotational inertia
-		val acceleration = signals.signalValue("alpha_in", 0.0)
+
+		if(n<vehicleParameters.maximumEngineTorque)
+			{
+			if(signals.signalValue("alpha_in", 0.0)<effectiveForce/vehicleParameters.mass)
+				{
+					val acceleration = signals.signalValue("alpha_in", 0.0)
+				}
+			else
+				{
+					val acceleration = effectiveForce/vehicleParameters.mass
+				}
+			}
+		else
+			{
+			val acceleration = 0.0
+			}
 
 		bus ? UpdateSignalValue("a", acceleration)
 	}
