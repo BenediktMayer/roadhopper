@@ -138,16 +138,17 @@ class Wheels(val vehicleParameters: VehicleParameters, bus: ActorRef) extends Pr
 		val n: Double = vehicleParameters.transmissionRatio * currentVelocity / vehicleParameters.wheelRadius
 
 		//val M_max: Double
-		if (vehicleParameters.maximumEngineTorque < vehicleParameters.maximumEnginePower/n)
+		if (vehicleParameters.maximumEngineTorque < vehicleParameters.maximumEnginePower / n)
 			{
-			val M_max = vehicleParameters.maximumEngineTorque
+			val M_max = vehicleParameters.maximumEngineTorque * vehicleParameters.transmissionRatio
 			}
 		else
 			{
-			val M_max = vehicleParameters.maximumEnginePower/n
+			val M_max = vehicleParameters.maximumEnginePower / n * vehicleParameters.transmissionRatio
 			}
 
-		val M_max = 0.0
+		val M_max: Double = 2000.0
+
 		val engineForce: Double = M_max / (vehicleParameters.wheelRadius / 100.0)
 
 		val brakeForce = currentVelocity match {
@@ -162,21 +163,32 @@ class Wheels(val vehicleParameters: VehicleParameters, bus: ActorRef) extends Pr
 
 		// TODO add a factor for rotational inertia
 
-		if(n<vehicleParameters.maximumEngineTorque)
-			{
-			if(signals.signalValue("alpha_in", 0.0)<effectiveForce/vehicleParameters.mass)
-				{
-					val acceleration = signals.signalValue("alpha_in", 0.0)
+		var acc: Double = 0.0
+
+		if ( signals.signalValue("alpha_in", 0.0) > 0.0 ) {
+			//if(n<vehicleParameters.maximumEngineRpm)
+			//{
+				if (signals.signalValue("alpha_in", 0.0) > effectiveForce / vehicleParameters.mass) {
+					acc = effectiveForce / vehicleParameters.mass
 				}
+				else {
+					acc = signals.signalValue("alpha_in", 0.0)
+				}
+			/*}
 			else
-				{
-					val acceleration = effectiveForce/vehicleParameters.mass
-				}
-			}
-		else
 			{
-			val acceleration = 0.0
+			acc = signals.signalValue("alpha_in", 0.0)
 			}
+			*/
+		}
+		else{
+		//	if (signals.signalValue("alpha_in", 0.0) < (-1.0)*vehicleParameters.maximumBrakingForce / vehicleParameters.mass){
+		//
+		//	}
+			acc = signals.signalValue("alpha_in", 0.0)
+		}
+
+		val acceleration: Double = acc
 
 		bus ? UpdateSignalValue("a", acceleration)
 	}
