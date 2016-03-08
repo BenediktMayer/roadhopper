@@ -16,6 +16,8 @@ import info.andreaswolf.roadhopper.simulation.signals.{SignalState, Process}
 
 import scala.concurrent.Future
 
+import scala.util.Random
+
 
 /**
  * Component that derives the target velocity from the road’s current allowed velocity.
@@ -65,7 +67,12 @@ class TargetVelocityEstimator(bus: ActorRef, journey: ActorRef) extends Process(
 		}
 		journey ? GetRoadAhead(lookAheadDistance) flatMap {
 			case ReturnRoadAhead(roadSegments) => Future {
-				val minimumSpeedLimit = roadSegments.map(_.speedLimit).filter(_ > 0).min
+				val random = scala.util.Random
+
+				//val SpeedLimit_humaninaccuracy : Double = random.nextDouble() * 4 - 2.0
+				val SpeedLimit_humaninaccuracy : Double = 0.0
+
+				val minimumSpeedLimit = roadSegments.map(_.speedLimit).filter(_ > 0).min + SpeedLimit_humaninaccuracy
 
 				// check if the look ahead distance contains any road signs which we must obey
 				val roadSignsAhead: List[RoadSign] = roadSegments.flatMap(_.roadSign)
