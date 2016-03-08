@@ -137,7 +137,7 @@ class Wheels(val vehicleParameters: VehicleParameters, bus: ActorRef) extends Pr
 
 		val n: Double = vehicleParameters.transmissionRatio * currentVelocity / vehicleParameters.wheelRadius
 
-		//val M_max: Double
+		//var M_max: Double
 		if (vehicleParameters.maximumEngineTorque < vehicleParameters.maximumEnginePower / n)
 			{
 			val M_max = vehicleParameters.maximumEngineTorque * vehicleParameters.transmissionRatio
@@ -149,46 +149,42 @@ class Wheels(val vehicleParameters: VehicleParameters, bus: ActorRef) extends Pr
 
 		val M_max: Double = 2000.0
 
-		val engineForce: Double = M_max / (vehicleParameters.wheelRadius / 100.0)
+		val F_engine_max : Double = M_max / (vehicleParameters.wheelRadius / 100.0)
 
-		val brakeForce = currentVelocity match {
-			case x if x > 0.0 =>
-				signals.signalValue("beta*", 0.0) * vehicleParameters.maximumBrakingForce
-			case x =>
-				0.0
+		val F_brake_max = currentVelocity match {
+			case x if x > 0.0 => 4.0 * vehicleParameters.maximumBrakingForce
+			case x => 0.0
 		}
 
-		val effectiveForce = engineForce - rollingFrictionForce - dragForce - brakeForce - climbingResistance
-		log.info(s"forces: (eff/engine/drag/rolling/brake/climbing): $effectiveForce/$engineForce/$dragForce/$rollingFrictionForce/$brakeForce/$climbingResistance")
+		val alpha: Double = signals.signalValue("alpha_in", 0.0)
+		val F_PT_eff: Double = vehicleParameters.mass * alpha
+		val F_needed: Double = F_PT_eff + rollingFrictionForce + dragForce + climbingResistance
+
+		var F_car: Double = 0.0
+
+		if (F_needed > 0.0){
+			if (F_needed > F_engine_max){
+				F_car = F_engine_max
+			}
+			else{
+				F_car = F_needed
+			}
+		}
+		else{
+			if (-F_needed > F_brake_max){
+				F_car = - F_brake_max
+			}
+			else{
+				F_car = F_needed
+			}
+		}
+
+		val F_eff = F_car - rollingFrictionForce - dragForce - climbingResistance
+		log.info(s"forces: (eff/engine/drag/rolling/brake/climbing): $F_eff/$F_car/$dragForce/$rollingFrictionForce/$climbingResistance")
 
 		// TODO add a factor for rotational inertia
 
-		var acc: Double = 0.0
-
-		if ( signals.signalValue("alpha_in", 0.0) > 0.0 ) {
-			//if(n<vehicleParameters.maximumEngineRpm)
-			//{
-				if (signals.signalValue("alpha_in", 0.0) > effectiveForce / vehicleParameters.mass) {
-					acc = effectiveForce / vehicleParameters.mass
-				}
-				else {
-					acc = signals.signalValue("alpha_in", 0.0)
-				}
-			/*}
-			else
-			{
-			acc = signals.signalValue("alpha_in", 0.0)
-			}
-			*/
-		}
-		else{
-		//	if (signals.signalValue("alpha_in", 0.0) < (-1.0)*vehicleParameters.maximumBrakingForce / vehicleParameters.mass){
-		//
-		//	}
-			acc = signals.signalValue("alpha_in", 0.0)
-		}
-
-		val acceleration: Double = acc
+		val acceleration: Double = F_eff / vehicleParameters.mass
 
 		bus ? UpdateSignalValue("a", acceleration)
 	}
