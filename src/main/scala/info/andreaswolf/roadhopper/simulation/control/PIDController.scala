@@ -61,9 +61,9 @@ class PIDController(val inputSignalName: String, val outputSignalName: String,
 		differentiator.update(currentInput)
 
 		val output = (
-			100.0 * proportionalGain * currentInput
-			+ integrator.currentState.currentOutput
-			//+ differentiator.currentState.currentOutput
+			200.0 * proportionalGain * currentInput
+			//+ 10.0 * integrator.currentState.currentOutput
+			// + 0.1 * differentiator.currentState.currentOutput
 		)
 
 		// only store the new value, but do not directly make it available, as there might be further invocations of
