@@ -36,7 +36,7 @@
 					xAxis = d3.svg.axis().scale(x).tickSize(-this.height).tickSubdivide(true),
 					yAxis = d3.svg.axis().scale(y).ticks(4).orient("left");
 
-			x.domain([values[0][0] / 1000, values[0][0] / 1000 + 300]);
+			x.domain([values[0][0] / 1000, values[0][0] / 1000 + 100]);
 			y.domain([0, d3.max(values, function (d) {
 				return d[1];
 			})]).nice();
