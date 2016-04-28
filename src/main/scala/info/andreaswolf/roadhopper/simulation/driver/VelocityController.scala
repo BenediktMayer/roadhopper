@@ -8,7 +8,7 @@ package info.andreaswolf.roadhopper.simulation.driver
 
 import akka.actor.{ActorLogging, ActorRef}
 import akka.pattern.ask
-import info.andreaswolf.roadhopper.simulation.signals.SignalBus.{DefineSignal, SubscribeToSignal, UpdateSignalValue}
+import info.andreaswolf.roadhopper.simulation.signals.SignalBus.{ScheduleSignalUpdate, DefineSignal, SubscribeToSignal, UpdateSignalValue}
 import info.andreaswolf.roadhopper.simulation.signals.{Process, SignalState}
 
 import scala.concurrent.{Await, Future}
@@ -25,21 +25,46 @@ class VelocityController(bus: ActorRef) extends Process(bus) with ActorLogging {
 	Await.result(Future.sequence(List(
 		bus ? SubscribeToSignal("v", self),
 		bus ? SubscribeToSignal("v_target", self),
+		bus ? DefineSignal("v_soft"),
 		bus ? DefineSignal("v_diff")
 	)), 1 second)
 
 	override def invoke(signals: SignalState): Future[Any] = {
 		// only run the calculation every 500ms, to approximate human steering behaviour; 500ms was randomly chosen
-		if (time % 500 > 0) {
-			return Future.successful()
-		}
+		//if (time % 500 > 0) {
+		//	return Future.successful()
+		//}
+
 		val actualVelocity: Double = signals.signalValue("v", 0.0)
 		val targetVelocity: Double = signals.signalValue("v_target", 0.0)
-		val velocityDifference = actualVelocity - targetVelocity
+		val softVelocity_old: Double = signals.signalValue("v_soft", 0.0)
+
+		val v_st: Double = 0.08
+
+		val softVelocity_new = softVelocity_old match {
+				case x if x < targetVelocity && x + v_st < targetVelocity => softVelocity_old + v_st
+				case x if x > targetVelocity && x - v_st > targetVelocity => softVelocity_old - v_st
+				case _ => targetVelocity
+		}
+
+		/*
+		var softVelocity_new: Double = targetVelocity
+
+		if(softVelocity_old < targetVelocity && softVelocity_old + v_st < targetVelocity){
+			softVelocity_new = softVelocity_old + v_st
+		}
+
+		if(softVelocity_old > targetVelocity && softVelocity_old - v_st > targetVelocity){
+			softVelocity_new = softVelocity_old - v_st
+		}
+		*/
+
+		val velocityDifference: Double = actualVelocity - softVelocity_new
 
 		log.debug(f"Velocity difference: $velocityDifference%.2f ($actualVelocity%.2f - $targetVelocity%.2f)")
 
 		bus ? UpdateSignalValue("v_diff", velocityDifference)
+		bus ? UpdateSignalValue("v_soft", softVelocity_new)
 	}
 
 }

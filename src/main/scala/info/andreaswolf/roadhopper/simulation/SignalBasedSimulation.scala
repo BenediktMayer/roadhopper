@@ -125,6 +125,7 @@ class SignalBasedSimulation(val simulationParameters: SimulationParameters, over
 			signalBus ? SubscribeToSignal("s", velocityEstimator),
 			signalBus ? SubscribeToSignal("time", velocityController),
 			signalBus ? SubscribeToSignal("v_diff", velocityController),
+			signalBus ? SubscribeToSignal("v_soft", velocityController),
 			signalBus ? SubscribeToSignal("alpha_in", gasPedal),
 			signalBus ? SubscribeToSignal("alpha_in", brakePedal),
 			signalBus ? SubscribeToSignal("beta", brake)
