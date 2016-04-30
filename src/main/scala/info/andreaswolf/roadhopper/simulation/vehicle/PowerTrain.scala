@@ -137,22 +137,19 @@ class Wheels(val vehicleParameters: VehicleParameters, bus: ActorRef) extends Pr
 
 		val n: Double = vehicleParameters.transmissionRatio * currentVelocity / vehicleParameters.wheelRadius
 
-		//var M_max: Double
-		if (vehicleParameters.maximumEngineTorque < vehicleParameters.maximumEnginePower / n)
-			{
-			val M_max = vehicleParameters.maximumEngineTorque * vehicleParameters.transmissionRatio
-			}
-		else
-			{
-			val M_max = vehicleParameters.maximumEnginePower / n * vehicleParameters.transmissionRatio
-			}
+		val M_max: Double = n match {
+				case x if x < 4500/60 => vehicleParameters.maximumEngineTorque
+				case x if x > vehicleParameters.maximumEngineRpm => 0.0
+				case x => vehicleParameters.maximumEngineTorque * 4500/60 /n
+		}
 
-		val M_max: Double = 2000.0
 
-		val F_engine_max : Double = M_max / (vehicleParameters.wheelRadius / 100.0)
+		val F_engine_max : Double = M_max / (vehicleParameters.wheelRadius / 100.0) * vehicleParameters.transmissionRatio
+
+
 
 		val F_brake_max = currentVelocity match {
-			case x if x > 0.0 => 4.0 * vehicleParameters.maximumBrakingForce
+			case x if x > 0.0 => vehicleParameters.maximumBrakingForce * 10.0
 			case x => 0.0
 		}
 
@@ -161,6 +158,7 @@ class Wheels(val vehicleParameters: VehicleParameters, bus: ActorRef) extends Pr
 		val F_needed: Double = F_PT_eff + rollingFrictionForce + dragForce + climbingResistance
 
 		var F_car: Double = 0.0
+
 
 		if (F_needed > 0.0){
 			if (F_needed > F_engine_max){
@@ -171,16 +169,20 @@ class Wheels(val vehicleParameters: VehicleParameters, bus: ActorRef) extends Pr
 			}
 		}
 		else{
+			/*
 			if (-F_needed > F_brake_max){
 				F_car = - F_brake_max
 			}
 			else{
 				F_car = F_needed
 			}
+			*/
+			F_car = F_needed
 		}
 
-		val F_eff = F_car - rollingFrictionForce - dragForce - climbingResistance
-		log.info(s"forces: (eff/engine/drag/rolling/brake/climbing): $F_eff/$F_car/$dragForce/$rollingFrictionForce/$climbingResistance")
+		val F_eff : Double = F_needed - rollingFrictionForce - dragForce - climbingResistance
+		log.info(s"forces: (ef" +
+			s"f/engine/drag/rolling/brake/climbing): $F_eff/$F_car/$dragForce/$rollingFrictionForce/$climbingResistance")
 
 		// TODO add a factor for rotational inertia
 
