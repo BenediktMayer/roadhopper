@@ -103,23 +103,23 @@ class SignalsJourneyActor(val timer: ActorRef, val signalBus: ActorRef, val rout
 
 	def getRoadAhead(length: Double = 150.0): List[RoadSegment] = {
 		// if the length to get is 0, we will be on the current segment for all of the look-ahead distance
-		var lengthToGet = Math.max(0.0, length - currentSegmentRest.length)
-		val a: Double = 0.0
-		var lengthToBegin = Math.max(0.0, a - currentSegmentRest.length)
+		var lengthToGet = Math.max(0, length - currentSegmentRest.length)
+		//val a: Double = 0.0
+		//var lengthToBegin = Math.max(0.0, a - currentSegmentRest.length)
 
 		val segmentsAhead = new ListBuffer[RoadSegment]
 		// rare edge case: we travelled exactly to the end of the segment => we must skip it here
-		if (currentSegmentRest.length > a) {
+		if (currentSegmentRest.length > 0) {
 			segmentsAhead append currentSegmentRest
 		}
 
 		remainingSegments.foreach(segment => {
 			if (lengthToGet > 0) {
 					lengthToGet -= segment.length
-					lengthToBegin -= segment.length
-					if (lengthToBegin <= 0){
+					//lengthToBegin -= segment.length
+					//if (lengthToBegin <= 0){
 						segmentsAhead append segment
-					}
+					//}
 			}
 		})
 		// if there are no more journey parts left after the current ones, this journey will end
