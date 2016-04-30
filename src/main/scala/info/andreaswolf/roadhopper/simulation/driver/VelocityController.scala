@@ -41,23 +41,11 @@ class VelocityController(bus: ActorRef) extends Process(bus) with ActorLogging {
 
 		val v_st: Double = 0.08
 
-		val softVelocity_new = softVelocity_old match {
+		val softVelocity_new: Double = softVelocity_old match {
 				case x if x < targetVelocity && x + v_st < targetVelocity => softVelocity_old + v_st
 				case x if x > targetVelocity && x - v_st > targetVelocity => softVelocity_old - v_st
 				case _ => targetVelocity
 		}
-
-		/*
-		var softVelocity_new: Double = targetVelocity
-
-		if(softVelocity_old < targetVelocity && softVelocity_old + v_st < targetVelocity){
-			softVelocity_new = softVelocity_old + v_st
-		}
-
-		if(softVelocity_old > targetVelocity && softVelocity_old - v_st > targetVelocity){
-			softVelocity_new = softVelocity_old - v_st
-		}
-		*/
 
 		val velocityDifference: Double = actualVelocity - softVelocity_new
 
