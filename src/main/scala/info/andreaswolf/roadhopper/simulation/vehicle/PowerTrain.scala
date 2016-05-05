@@ -153,40 +153,24 @@ class Wheels(val vehicleParameters: VehicleParameters, bus: ActorRef) extends Pr
 			case x => 0.0
 		}
 
-		val alpha: Double = signals.signalValue("alpha_in", 0.0)
-		val F_PT_eff: Double = vehicleParameters.mass * alpha
-		val F_needed: Double = F_PT_eff + rollingFrictionForce + dragForce + climbingResistance
+		val a_Stern: Double = signals.signalValue("alpha_in", 0.0)
 
-		var F_car: Double = 0.0
+		val F_eff_max: Double = F_engine_max - rollingFrictionForce - dragForce - climbingResistance
+		val a_max: Double = F_eff_max / vehicleParameters.mass
+
+		val F_eff_min: Double = - F_brake_max - rollingFrictionForce - dragForce - climbingResistance
+		val a_min: Double = F_eff_min / vehicleParameters.mass
 
 
-		if (F_needed > 0.0){
-			if (F_needed > F_engine_max){
-				F_car = F_engine_max
-			}
-			else{
-				F_car = F_needed
-			}
-		}
-		else{
-			/*
-			if (-F_needed > F_brake_max){
-				F_car = - F_brake_max
-			}
-			else{
-				F_car = F_needed
-			}
-			*/
-			F_car = F_needed
-		}
-
-		val F_eff : Double = F_needed - rollingFrictionForce - dragForce - climbingResistance
-		log.info(s"forces: (ef" +
-			s"f/engine/drag/rolling/brake/climbing): $F_eff/$F_car/$dragForce/$rollingFrictionForce/$climbingResistance")
+		log.info(s"forces: (drag/rolling/climbing): /$dragForce/$rollingFrictionForce/$climbingResistance")
 
 		// TODO add a factor for rotational inertia
 
-		val acceleration: Double = F_eff / vehicleParameters.mass
+		val acceleration: Double = a_Stern match{
+			case x if x > a_max => a_max
+			case x if x < a_min => a_min
+			case _ => a_Stern
+		}
 
 		bus ? UpdateSignalValue("a", acceleration)
 	}
