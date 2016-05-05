@@ -46,7 +46,7 @@ class TargetVelocityEstimator(bus: ActorRef, journey: ActorRef) extends Process(
 	var velocityBeforeStop = 0.0
 
 	override def invoke(signals: SignalState): Future[Any] = {
-		if (time % 500 > 0) {
+		if (time % 50 > 0) {
 			return Future.successful()
 		}
 
