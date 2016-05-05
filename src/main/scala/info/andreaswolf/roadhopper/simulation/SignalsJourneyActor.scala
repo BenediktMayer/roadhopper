@@ -109,6 +109,7 @@ class SignalsJourneyActor(val timer: ActorRef, val signalBus: ActorRef, val rout
 
 		val segmentsAhead = new ListBuffer[RoadSegment]
 		// rare edge case: we travelled exactly to the end of the segment => we must skip it here
+		//if (currentSegmentRest.length > a) {
 		if (currentSegmentRest.length > 0) {
 			segmentsAhead append currentSegmentRest
 		}
