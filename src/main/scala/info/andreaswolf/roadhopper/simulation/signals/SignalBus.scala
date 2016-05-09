@@ -170,7 +170,7 @@ class SignalBus(val timer: ActorRef) extends SimulationActor {
 				// there might not be any scheduled updates now, as a) we are at the beginning of a time step and
 				// b) if there were any scheduled updates left in the previous time step, another delta cycle should have been
 				// scheduled there; so if there are any updates left, this most likely means we have a race condition somewhere
-				assert(scheduledUpdates.isEmpty, "ERROR: Regular updates scheduled for first delta cycle!")
+				//assert(scheduledUpdates.isEmpty, "ERROR: Regular updates scheduled for first delta cycle!")
 
 				// get the signal updates that were scheduled for the current time step in earlier time steps (e.g. in
 				// dead time parts)
