@@ -137,19 +137,23 @@ class Wheels(val vehicleParameters: VehicleParameters, bus: ActorRef) extends Pr
 
 		val n: Double = vehicleParameters.transmissionRatio * currentVelocity / vehicleParameters.wheelRadius
 
-		val M_max: Double = n match {
+		val M_max_nof: Double = n match {
 				case x if x < 4500/60 => vehicleParameters.maximumEngineTorque
 				case x if x > vehicleParameters.maximumEngineRpm => 0.0
 				case x => vehicleParameters.maximumEngineTorque * 4500/60 /n
 		}
 
+		val k_M: Double = 0.8
+		val M_max: Double = k_M * M_max_nof
+
+		//val M_max: Double = vehicleParameters.maximumEngineTorque
 
 		val F_engine_max : Double = M_max / (vehicleParameters.wheelRadius / 100.0) * vehicleParameters.transmissionRatio
 
 
 
 		val F_brake_max = currentVelocity match {
-			case x if x > 0.0 => vehicleParameters.maximumBrakingForce * 10.0
+			case x if x > 0.0 => vehicleParameters.maximumBrakingForce * 100.0
 			case x => 0.0
 		}
 
