@@ -46,7 +46,7 @@ class TargetVelocityEstimator(bus: ActorRef, journey: ActorRef) extends Process(
 	var velocityBeforeStop = 0.0
 
 	override def invoke(signals: SignalState): Future[Any] = {
-		if (time % 50 > 0) {
+		if (time % 5 > 0) {
 			return Future.successful()
 		}
 
@@ -58,7 +58,7 @@ class TargetVelocityEstimator(bus: ActorRef, journey: ActorRef) extends Process(
 
 		// The formula for calculating s_lookahead was taken from literature, but has not proven to be very good; this model
 		// definitely needs improvement.
-		val lookAheadDistance: Int = (currentVelocity * currentVelocity / (2 * 4.0)).round.toInt match {
+		val lookAheadDistance: Int = (currentVelocity * currentVelocity / (2 * 3.0)).round.toInt match {
 			case x if currentPosition + x < farthestLookaheadPosition =>
 				(farthestLookaheadPosition - currentPosition).ceil.toInt
 			case x =>
@@ -69,10 +69,15 @@ class TargetVelocityEstimator(bus: ActorRef, journey: ActorRef) extends Process(
 			case ReturnRoadAhead(roadSegments) => Future {
 				val random = scala.util.Random
 
-				//val SpeedLimit_humaninaccuracy : Double = random.nextDouble() * 4 - 2.0
-				val SpeedLimit_humaninaccuracy : Double = 0.0
+				val Jitter = signals.signalValue("Jitter",0.0)
+				if(time % 500 > 0){
+					val Jitter_new : Double = random.nextDouble() * 2 - 1.0
+					bus ? UpdateSignalValue("Jitter", Jitter_new)
+				}
 
-				val minimumSpeedLimit = roadSegments.map(_.speedLimit).filter(_ > 0).min + SpeedLimit_humaninaccuracy
+				val k_target = 0.95
+				val minimumSpeedLimit_noJitter = k_target * roadSegments.map(_.speedLimit).filter(_ > 0).min
+				val minimumSpeedLimit = minimumSpeedLimit_noJitter + Jitter * (5 + 1/15 * minimumSpeedLimit_noJitter)
 
 				// check if the look ahead distance contains any road signs which we must obey
 				val roadSignsAhead: List[RoadSign] = roadSegments.flatMap(_.roadSign)
