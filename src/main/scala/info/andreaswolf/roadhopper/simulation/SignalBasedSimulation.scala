@@ -18,7 +18,7 @@ import info.andreaswolf.roadhopper.simulation.control.{PIDController, PT1}
 import info.andreaswolf.roadhopper.simulation.driver.{TargetVelocityEstimator, VelocityController}
 import info.andreaswolf.roadhopper.simulation.signals.SignalBus.SubscribeToSignal
 import info.andreaswolf.roadhopper.simulation.signals.{SignalBus, SignalState}
-import info.andreaswolf.roadhopper.simulation.vehicle.{Brake, VehicleFactory, VehicleParameters}
+import info.andreaswolf.roadhopper.simulation.vehicle.{Brake, Wheels, VehicleFactory, VehicleParameters}
 
 import scala.collection.mutable
 import scala.concurrent.duration._
@@ -95,9 +95,7 @@ class SignalBasedSimulation(val simulationParameters: SimulationParameters, over
 	val velocityEstimator = actorSystem.actorOf(Props(new TargetVelocityEstimator(signalBus, journey)))
 	val targetVelocityCalculator = actorSystem.actorOf(Props(new VelocityController(signalBus)))
 	val velocityController = actorSystem.actorOf(Props(
-		new PIDController("v_diff", "alpha_in",
-			simulationParameters.velocityController.proportionalGain, simulationParameters.velocityController.integratorGain,
-			simulationParameters.velocityController.differentiatorGain, signalBus)
+		new PIDController("v_diff", "alpha_in", -0.9, 0.0, 0.0, signalBus)
 	))
 
 	///////////////////////////////////////////////////////////////////////////
@@ -126,6 +124,7 @@ class SignalBasedSimulation(val simulationParameters: SimulationParameters, over
 			signalBus ? SubscribeToSignal("time", velocityController),
 			signalBus ? SubscribeToSignal("v_diff", velocityController),
 			signalBus ? SubscribeToSignal("v_soft", velocityController),
+			signalBus ? SubscribeToSignal("Jitter", velocityController),
 			signalBus ? SubscribeToSignal("alpha_in", gasPedal),
 			signalBus ? SubscribeToSignal("alpha_in", brakePedal),
 			signalBus ? SubscribeToSignal("beta", brake)
